@@ -5,7 +5,7 @@ defmodule KV.BucketTest do
   Here we the Agent's PID to reference the process
   """
   test "stores values by key 1" do
-    {:ok, bucket} = KV.Bucket.start_link()
+    {:ok, bucket} = start_supervised(KV.Bucket)
     assert KV.Bucket.get(bucket, "milk") == nil
   end
 
@@ -14,7 +14,7 @@ defmodule KV.BucketTest do
   but we might run into name collisions with other tests running in parallel
   """
   test "stores values by key 2" do
-    KV.Bucket.start_link(name: :test_bucket)
+    start_supervised({KV.Bucket, name: :test_bucket})
     assert KV.Bucket.get(:test_bucket, "milk") == nil
   end
 
@@ -22,7 +22,7 @@ defmodule KV.BucketTest do
   To avoid name collisions, we can use the test's metadata
   """
   test "stores values by key 3", config do
-    KV.Bucket.start_link(name: config.test)
+    start_supervised({KV.Bucket, name: config.test})
     assert KV.Bucket.get(config.test, "milk") == nil
 
     KV.Bucket.put(config.test, "milk", 3)

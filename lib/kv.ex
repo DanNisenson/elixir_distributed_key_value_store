@@ -1,18 +1,33 @@
 defmodule KV do
-  @moduledoc """
-  Documentation for `KV`.
-  """
+  use Application
+
+  # The @impl true annotation says we are implementing a callback
+  @impl true
+  def start(_mode, _opts) do
+    children = [
+      {Registry, name: KV, keys: :unique},
+      {DynamicSupervisor, name: KV.BucketSupervisor, strategy: :one_for_one}
+    ]
+
+    Supervisor.start_link(children, strategy: :one_for_one)
+  end
 
   @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> KV.hello()
-      :world
-
+  Get PID or {name, node} for registered process by name
   """
-  def hello do
-    :world
+  def lookup_bucket(name) do
+    GenServer.whereis(via(name))
+  end
+
+  @doc """
+  Create a supervised bucket process
+  """
+  def create_bucket(name) do
+    DynamicSupervisor.start_child(KV.BucketSupervisor, {KV.Bucket, name: via(name)})
+  end
+
+  # Get tuple for Registry lookup
+  defp via(name) do
+    {:via, Registry, {KV, name}}
   end
 end
